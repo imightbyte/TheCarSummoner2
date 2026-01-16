@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🖐️ Uber Secret Ride</title>
+<title>🖐️ Ride with Secret Code</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
@@ -36,7 +36,7 @@
 </head>
 
 <body>
-<h1>Show an 🖐️ → Secret Uber Ride Appears!</h1>
+<h1>Show an 🖐️ → Secret Code Appears!</h1>
 <button id="startBtn">Activate Camera</button>
 <div>
     <canvas id="output_canvas" width="640" height="480"></canvas>
@@ -118,7 +118,7 @@ function onResults(results) {
             ctx.textAlign = "center";
             ctx.fillStyle = "#fff";
             ctx.shadowBlur = 0;
-            ctx.fillText("UBER-SECRET-RIDE", x, y + 7);
+            ctx.fillText("SECRET-CODE", x, y + 7);
         }
     }
 
