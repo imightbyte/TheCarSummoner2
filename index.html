@@ -6,7 +6,6 @@
     <title>🖐️ Secret Code on Hand</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
 
     <style>
@@ -54,7 +53,6 @@
         startBtn.onclick = async () => {
             startBtn.style.display = 'none';
 
-            // Create video element dynamically
             videoElement = document.createElement('video');
             videoElement.autoplay = true;
             videoElement.playsInline = true;
@@ -94,9 +92,6 @@
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
-
-                drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
-                drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2 });
 
                 if (isPaper(landmarks)) {
                     currentPaper = true;
