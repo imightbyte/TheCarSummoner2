@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖐️ Gesture → Video Plays</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; }
+        .container { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-top: 20px; }
+        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        canvas, video { border: 5px solid #333; border-radius: 12px; }
+        button { padding: 15px 30px; font-size: 20px; background: #007bff; color: white; border: none; border-radius: 10px; cursor: pointer; margin: 20px; }
+        button:hover { background: #0056b3; }
+        h1 { color: #333; }
+
+        @media (max-width: 768px) {
+            body { margin: 10px; padding: 10px; }
+            .container { flex-direction: column; gap: 20px; }
+            .box { padding: 10px; }
+            canvas, video { width: 100%; height: auto; }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Show an 🖐️ → Video Plays!</h1>
+    <p>Secret code appears on your hand</p>
+
+    <button id="startBtn">CLICK HERE TO ACTIVATE CAMERA & VIDEO</button>
+
+    <div class="container" id="mainContainer" style="display:none;">
+        <div class="box" id="cameraBox">
+            <h2>Camera</h2>
+            <video id="webcam" autoplay playsinline style="display:none;"></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+
+        <div class="box" id="videoBox">
+            <h2>Brand Video</h2>
+            <video id="myVideo" loop muted playsinline webkit-playsinline>
+                <source src="Uber.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const mainContainer = document.getElementById('mainContainer');
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const targetVideo = document.getElementById('myVideo');
+
+        const cameraBox = document.getElementById("cameraBox");
+        const videoBox = document.getElementById("videoBox");
+
+        let paperDetected = false;
+
+        startBtn.onclick = async () => {
+            startBtn.style.display = 'none';
+            mainContainer.style.display = 'flex';
+            targetVideo.load();
+
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
+
+            hands.onResults(onResults);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => await hands.send({ image: videoElement }),
+                width: 640,
+                height: 480,
+                facingMode: 'user'
+            });
+
+            camera.start();
+
+            videoElement.addEventListener('loadedmetadata', () => {
+                canvasElement.width = 640;
+                canvasElement.height = 480;
+            });
+        };
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            let currentPaper = false;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+                drawLandmarks(canvasCtx, landmarks, { color: '#FF0000', lineWidth: 2 });
+
+                if (isPaper(landmarks)) {
+                    currentPaper = true;
+
+                    // ★ Draw secret code on palm (landmark 9)
+                    const palm = landmarks[9];
+                    const x = palm.x * canvasElement.width;
+                    const y = palm.y * canvasElement.height;
+
+                    canvasCtx.font = "bold 32px Arial";
+                    canvasCtx.textAlign = "center";
+                    canvasCtx.fillStyle = "#00FFCC";
+                    canvasCtx.shadowColor = "#00FFCC";
+                    canvasCtx.shadowBlur = 20;
+
+                    canvasCtx.fillText("SECRET2026", x, y);
+                    canvasCtx.shadowBlur = 0;
+                }
+            }
+
+            if (currentPaper && !paperDetected) {
+                targetVideo.currentTime = 0;
+                targetVideo.play();
+                paperDetected = true;
+
+                setTimeout(() => {
+                    videoBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 300);
+            }
+
+            else if (!currentPaper && paperDetected) {
+                targetVideo.pause();
+                targetVideo.currentTime = 0;
+                paperDetected = false;
+
+                setTimeout(() => {
+                    cameraBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 300);
+            }
+
+            canvasCtx.restore();
+        }
+
+        function isPaper(landmarks) {
+            const tips = [4, 8, 12, 16, 20];
+            const mcps = [2, 5, 9, 13, 17];
+            let extended = 0;
+
+            for (let i = 0; i < 5; i++) {
+                if (landmarks[tips[i]].y < landmarks[mcps[i]].y - 0.03) extended++;
+            }
+            if (extended < 4) return false;
+
+            const xs = tips.map(i => landmarks[i].x).sort((a, b) => a - b);
+            for (let i = 1; i < xs.length; i++) {
+                if (xs[i] - xs[i - 1] < 0.03) return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
