@@ -226,7 +226,7 @@ canvas.addEventListener('click', (e) => {
         clickY >= badgePos.y &&
         clickY <= badgePos.y + badgePos.height
     ) {
-        const uberLink = 'uber://?action=setPickup&pickup=my_location&dropoff[latitude]=37.7749&dropoff[longitude]=-122.4194';
+        const uberLink = 'uber://?action=setPickup&pickup=my_location';
         window.location.href = uberLink;
     }
 });
